@@ -8,8 +8,7 @@ on:
 env:
   PROJECT_ID: ${{ secrets.GKE_PROJECT }}
   REGION: ${{ secrets.GKE_REGION }}
-  OPERATOR_NAME: kudremukh-operator #Rule: same as repository name
-  IMAGE_TAG: development #${{ github.sha }} #Rule: same as branch name
+  OPERATOR_NAME: kudremukh-operator 
   GCP_SA_KEY: ${{ secrets.GCP_SA_KEY }} # reqd for update docker image to ggl Artifact Repository
 
 jobs:
