@@ -8,7 +8,7 @@ on:
 env:
   PROJECT_ID: ${{ secrets.GKE_PROJECT }}
   REGION: ${{ secrets.GKE_REGION }}
-  IMAGE_NAME: kudremukh-operator #Rule: same as repository name
+  OPERATOR_NAME: kudremukh-operator #Rule: same as repository name
   IMAGE_TAG: development #${{ github.sha }} #Rule: same as branch name
   GCP_SA_KEY: ${{ secrets.GCP_SA_KEY }} # reqd for update docker image to ggl Artifact Repository
 
@@ -44,6 +44,16 @@ jobs:
         git config --global user.name ${{ secrets.GH_USER_NAME }}
         git clone -b development https://.:${{ secrets.GH_PERSONAL_ACCESS_TOKEN }}@github.com/sevenport-labs/helm-charts.git
         echo "Cloning success"
+    - name: Lint the Helm Package
+      run: |
+        cd helm-charts
+        helm lint ${{ env.OPERATOR_NAME }}
+        echo "Package lint success"
+    - name: Build the Helm Package
+      run: |
+        cd helm-charts
+        helm package ${{ env.OPERATOR_NAME }}
+        echo "Package creation success"
     - name: Create the Index
       run: |
         cd helm-charts
