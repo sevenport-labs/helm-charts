@@ -5,10 +5,10 @@
 replicaCount: 1
 
 image:
-  repository: us-east1-docker.pkg.dev/labs-36596/kudremukh-operator:development
-  pullPolicy: IfNotPresent
+  repository: us-east1-docker.pkg.dev/labs-36596/kudremukh-operator/kudremukh-operator
+  pullPolicy: Always
   # Overrides the image tag whose default is the chart appVersion.
-  tag: ""
+  tag: development
 
 imagePullSecrets: []
 nameOverride: ""
