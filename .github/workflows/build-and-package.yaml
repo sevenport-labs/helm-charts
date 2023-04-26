@@ -6,8 +6,12 @@ on:
       - development
 
 env:
-  OPERATOR_NAME: kudremukh-operator 
-  
+  PROJECT_ID: ${{ secrets.GKE_PROJECT }}
+  REGION: ${{ secrets.GKE_REGION }}
+  IMAGE_NAME: kudremukh-operator #Rule: same as repository name
+  IMAGE_TAG: development #${{ github.sha }} #Rule: same as branch name
+  GCP_SA_KEY: ${{ secrets.GCP_SA_KEY }} # reqd for update docker image to ggl Artifact Repository
+
 jobs:
   build-and-push:
     runs-on: ubuntu-latest
@@ -21,34 +25,40 @@ jobs:
     - name: Checkout code
       uses: actions/checkout@v3
     
+    # Authentication for gcloud Artifact Registry via credentials json
+    - id: 'auth'
+      uses: 'google-github-actions/auth@v1'
+      with:
+        credentials_json: '${{ secrets.GCP_SA_KEY }}'
+
+    # Setup gcloud
+    - name: Set up Google Cloud SDK
+      uses: google-github-actions/setup-gcloud@v1
+      with:
+        project_id: ${{ env.PROJECT_ID }}
+        service_account_key: ${{ env.GCP_SA_KEY }}
+        export_default_credentials: true
     - name: Clone the Helm repo
       run: |
         git config --global user.email ${{ secrets.GH_USER_EMAIL }}
         git config --global user.name ${{ secrets.GH_USER_NAME }}
         git clone -b development https://.:${{ secrets.GH_PERSONAL_ACCESS_TOKEN }}@github.com/sevenport-labs/helm-charts.git
         echo "Cloning success"
-    
-    - name: Lint the Helm chart
-      run: |
-        cd helm-charts
-        helm lint ${{ env.OPERATOR_NAME }}
-        echo "Linting success"
-    - name: Package the Helm chart
-      run: |
-        cd helm-charts
-        helm package ${{ env.OPERATOR_NAME }}
-        echo "Packaging success"
-
     - name: Create the Index
       run: |
         cd helm-charts
         helm repo index . --url https://sevenport-labs.github.io/helm-charts/
         echo "Index creation success"
+    - name: Echo the shasum
+      id: echo-sha
+      run: |
+        echo "github_sha: " $GITHUB_SHA 
+        echo "::set-output name=sha_short::${GITHUB_SHA::7}"
     
     - name: Commit and push the changes
       run: |
         cd helm-charts
         git add .
-        git commit -m "Update the Helm chart"
+        git commit -m "Updated the Helm chart with $GITHUB_SHA"
         git push
         echo "Pushing success"
