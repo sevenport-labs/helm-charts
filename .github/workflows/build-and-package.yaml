@@ -55,10 +55,4 @@ jobs:
         echo "github_sha: " $GITHUB_SHA 
         echo "::set-output name=sha_short::${GITHUB_SHA::7}"
     
-    - name: Commit and push the changes
-      run: |
-        cd helm-charts
-        git add .
-        git commit -m "Updated the Helm chart with $GITHUB_SHA"
-        git push
-        echo "Pushing success"
+    
