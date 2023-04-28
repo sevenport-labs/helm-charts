@@ -23,7 +23,7 @@ jobs:
     steps:
     - name: Checkout code
       uses: actions/checkout@v3
-    
+
     # Authentication for gcloud Artifact Registry via credentials json
     - id: 'auth'
       uses: 'google-github-actions/auth@v1'
@@ -43,17 +43,26 @@ jobs:
         git config --global user.name ${{ secrets.GH_USER_NAME }}
         git clone -b development https://.:${{ secrets.GH_PERSONAL_ACCESS_TOKEN }}@github.com/sevenport-labs/helm-charts.git
         echo "Cloning success"
+    - name: Check Commit Author
+      id: check_commit_author
+      run: |
+        if [[ "$(git log -1 --pretty=format:'%ae')" == "${{ secrets.GH_USER_EMAIL }}" ]]; then
+          echo "::set-output name=skip::true"
+        fi
     - name: Lint the Helm Package
+      if: steps.check_commit_author.outputs.skip != 'true'
       run: |
         cd helm-charts
         helm lint ${{ env.OPERATOR_NAME }}
         echo "Package lint success"
     - name: Build the Helm Package
+      if: steps.check_commit_author.outputs.skip != 'true'
       run: |
         cd helm-charts
         helm package ${{ env.OPERATOR_NAME }}
         echo "Package creation success"
     - name: Create the Index
+      if: steps.check_commit_author.outputs.skip != 'true'
       run: |
         cd helm-charts
         helm repo index . --url https://sevenport-labs.github.io/helm-charts/
@@ -63,5 +72,14 @@ jobs:
       run: |
         echo "github_sha: " $GITHUB_SHA 
         echo "::set-output name=sha_short::${GITHUB_SHA::7}"
+    - name: Commit the index and tgz
+      if: steps.check_commit_author.outputs.skip != 'true'
+      run: |
+        cd helm-charts
+        git add .
+        git commit -m "Update ${{ env.OPERATOR_NAME }} to ${{ steps.echo-sha.outputs.sha_short }}"
+        git push origin development
+        echo "Commit success"
+
     
     
